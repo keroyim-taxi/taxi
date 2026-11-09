@@ -473,8 +473,8 @@
       <span id="rentStatus" class="status-text">未設定</span>
     </div>
     <div class="rent-grid">
-      <button id="btnRent470" class="rent-btn" onclick="setSingleItem('車租', 'exp', 470)">$470</button>
-      <button id="btnRent390" class="rent-btn" onclick="setSingleItem('車租', 'exp', 390)">$390</button>
+      <button id="btnRent490" class="rent-btn" onclick="setSingleItem('車租', 'exp', 490)">$490</button>
+      <button id="btnRent4100" class="rent-btn" onclick="setSingleItem('車租', 'exp', 410)">$410</button>
       <button id="btnRentCustom" class="rent-btn" onclick="openCustomRentModal()">自訂金額</button>
       <button class="rent-btn" style="color:var(--sub); font-weight:600;" onclick="setSingleItem('車租', 'exp', 0)">清除</button>
     </div>
@@ -949,10 +949,10 @@
       document.getElementById('statOtherExp').textContent = '$' + sumOtherExp.toFixed(1).replace(/\.0$/, '');
 
       // 更新車租按鈕高亮狀態
-      document.getElementById('btnRent470').classList.toggle('active', sumRent === 470);
-      document.getElementById('btnRent390').classList.toggle('active', sumRent === 390);
+      document.getElementById('btnRent490').classList.toggle('active', sumRent === 490);
+      document.getElementById('btnRent410').classList.toggle('active', sumRent === 410);
       const customBtn = document.getElementById('btnRentCustom');
-      const isCustomRent = sumRent > 0 && sumRent !== 470 && sumRent !== 390;
+      const isCustomRent = sumRent > 0 && sumRent !== 490 && sumRent !== 410;
       customBtn.classList.toggle('active', isCustomRent);
       customBtn.textContent = isCustomRent ? `$${sumRent}` : '自訂金額';
 
