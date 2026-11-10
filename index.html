@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>的士收支記帳簿</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --dark: #0f172a;
+      --text: #1e293b;
+      --sub: #64748b;
+      --green: #16a34a;
+      --green-soft: #dcfce7;
+      --blue: #2563eb;
+      --red: #ef4444;
+      --orange: #f59e0b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang HK", "SF Pro Text", "Microsoft JhengHei", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 12px 12px 60px 12px;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin-inline: auto;
+      line-height: 1.4;
+      font-variant-numeric: tabular-nums;
+    }
+
+    button, input, textarea {
+      font-family: inherit;
+    }
+
+    /* 頂部卡片：上下兩層設計，徹底告別手機窄畫面擠迫 */
+    .top-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.2px;
+    }
+    .shift-rule {
+      font-size: 12px;
+      color: var(--sub);
+      background: #f1f5f9;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+    .today-pill {
+      padding: 6px 12px;
+      border-radius: 99px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .today-pill:active {
+      background: #e2e8f0;
+    }
+
+    /* 獨立全寬日期切換列：大而工整 */
+    .date-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      width: 46px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 15px;
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-btn:active {
+      background: #e2e8f0;
+    }
+    .date-box {
+      position: relative;
+      flex: 1;
+    }
+    .date-display {
+      height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 800;
+      background: #ffffff;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .hidden-date-input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    /* 總覽深色看板 */
+    .dashboard {
+      background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+    }
+    .dash-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .net-label {
+      font-size: 15px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .status-badge {
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-weight: 700;
+    }
+    .status-open {
+      background: rgba(74, 222, 128, 0.16);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.35);
+    }
+    .status-settled {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .net-amount {
+      font-size: 46px;
+      font-weight: 800;
+      margin: 6px 0 16px 0;
+      color: #4ade80;
+      letter-spacing: -1px;
+      line-height: 1.1;
+    }
+    .net-amount.negative {
+      color: #f87171;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 14px;
+    }
+    .summary-item .label {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .summary-item .val {
+      font-size: 23px;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+    .val-inc { color: #38bdf8; }
+    .val-exp { color: #f87171; }
+
+    .settle-bar {
+      margin-top: 16px;
+    }
+    .settle-btn {
+      width: 100%;
+      height: 48px;
+      border-radius: 12px;
+      border: none;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.28);
+    }
+    .settle-btn:active {
+      transform: scale(0.99);
+    }
+
+    /* 六宮格統計：高度對齊、比例勻稱 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat-card {
+      background: var(--card);
+      border-radius: 15px;
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .stat-title {
+      font-size: 13px;
+      color: var(--sub);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .stat-val {
+      font-size: 21px;
+      font-weight: 800;
+      margin: 4px 0 2px 0;
+      color: #0f172a;
+    }
+    .stat-sub {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    /* 通用卡片樣式 */
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+    }
+    .street-card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1.5px solid #86efac;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.07);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tag-pill {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      background: var(--green-soft);
+      color: #15803d;
+      font-weight: 700;
+    }
+
+    /* 街客輸入區：精緻內嵌 $ 符號、大字好睇 */
+    .price-box {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .price-symbol {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--green);
+      pointer-events: none;
+    }
+    .input-price {
+      width: 100%;
+      height: 54px;
+      padding: 0 14px 0 34px;
+      font-size: 22px;
+      font-weight: 800;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 13px;
+      background: #fff;
+      color: #0f172a;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-price::placeholder {
+      font-size: 17px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .input-price:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+    }
+
+    .input-note {
+      width: 100%;
+      height: 46px;
+      padding: 0 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #f8fafc;
+      color: var(--text);
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .input-note:focus {
+      border-color: var(--green);
+      background: #fff;
+    }
+
+    /* 快捷備註標籤列 */
+    .quick-tags {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+    .quick-tags::-webkit-scrollbar { display: none; }
+    .q-tag {
+      padding: 7px 13px;
+      border-radius: 99px;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .q-tag:active {
+      background: var(--green-soft);
+      color: #15803d;
+      border-color: #86efac;
+    }
+
+    .btn-green {
+      width: 100%;
+      height: 52px;
+      background: var(--green);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      border: none;
+      border-radius: 13px;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(22, 163, 74, 0.22);
+    }
+    .btn-green:active {
+      opacity: 0.92;
+      transform: scale(0.99);
+    }
+
+    /* 每日單次結算區：分區清晰俐落 */
+    .item-block {
+      padding: 12px 0;
+      border-top: 1px solid #f1f5f9;
+    }
+    .item-block:first-of-type {
+      border-top: none;
+      padding-top: 2px;
+    }
+    .item-block:last-of-type {
+      padding-bottom: 0;
+    }
+    .sub-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 9px;
+      color: #1e293b;
+    }
+    .status-text {
+      font-size: 13px;
+      color: var(--sub);
+      font-weight: 700;
+    }
+    .status-text.filled {
+      color: #0f172a;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    /* 車租 4 格一列，乾淨整齊又夠高好撳 */
+    .rent-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.05fr 0.8fr;
+      gap: 8px;
+    }
+    .rent-btn {
+      height: 46px;
+      padding: 0 4px;
+      border-radius: 11px;
+      border: 1.5px solid var(--border);
+      background: #f8fafc;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .rent-btn.active {
+      border-color: var(--red);
+      background: #fef2f2;
+      color: var(--red);
+    }
+
+    .single-row {
+      display: flex;
+      gap: 8px;
+    }
+    .single-input {
+      flex: 1;
+      height: 48px;
+      padding: 0 14px;
+      font-size: 18px;
+      font-weight: 700;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      background: #fff;
+      color: #0f172a;
+      outline: none;
+    }
+    .single-input::placeholder {
+      font-size: 15px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .single-input:focus {
+      border-color: var(--blue);
+    }
+
+    .save-btn {
+      height: 48px;
+      padding: 0 20px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .save-btn:active { opacity: 0.9; }
+    .btn-blue { background: var(--blue); }
+    .btn-red { background: var(--red); }
+
+    .other-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .other-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .other-btn {
+      height: 44px;
+      border-radius: 11px;
+      border: none;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .other-btn-inc {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    .other-btn-exp {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    /* 當更逐筆明細 */
+    .record-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .record-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+      gap: 8px;
+    }
+    .record-item:last-child {
+      border-bottom: none;
+      padding-bottom: 2px;
+    }
+    .rec-left {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+    .badge {
+      padding: 4px 8px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .b-inc { background: #dcfce7; color: #15803d; }
+    .b-uber { background: #dbeafe; color: #1d4ed8; }
+    .b-exp { background: #fee2e2; color: #b91c1c; }
+    .rec-note {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .rec-time {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .rec-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .rec-amt {
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .del-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .del-btn:active {
+      background: #fee2e2;
+      color: var(--red);
+    }
+
+    /* 月結三欄統計盒 */
+    .month-box {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+      border: 1px solid #f1f5f9;
+    }
+    .month-box .m-label {
+      font-size: 12px;
+      color: var(--sub);
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .month-box .m-val {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    /* 彈窗 Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      width: 100%;
+      max-width: 390px;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 20px 30px rgba(0, 0, 0, 0.22);
+    }
+    .receipt-title {
+      text-align: center;
+      font-size: 19px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .receipt-date {
+      text-align: center;
+      font-size: 14px;
+      color: var(--sub);
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .receipt-body {
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 14px 16px;
+      border: 1px dashed #cbd5e1;
+      margin-bottom: 14px;
+    }
+    .r-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .r-row.total {
+      border-top: 1px solid #cbd5e1;
+      padding-top: 10px;
+      margin-top: 10px;
+      margin-bottom: 0;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .m-btn {
+      width: 100%;
+      height: 48px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* 懸浮提示 Toast */
+    .toast-notification {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(15, 23, 42, 0.94);
+      color: #fff;
+      padding: 11px 20px;
+      border-radius: 99px;
+      font-size: 15px;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.22s ease;
+      white-space: nowrap;
+    }
+    .toast-notification.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 懸浮訊息提示 -->
+  <div id="toastBox" class="toast-notification">提示訊息</div>
+
+  <!-- 頂部導航與日期切換（分層排版，清晰不擠迫） -->
+  <div class="top-card">
+    <div class="top-row">
+      <div class="brand">
+        <span class="brand-icon">🚕</span>
+        <span class="brand-title">的士收支記帳</span>
+        <span class="shift-rule">06:00 換日</span>
+      </div>
+      <button class="today-pill" onclick="jumpToCurrentShift()">回到當更</button>
+    </div>
+    <div class="date-bar">
+      <button class="nav-btn" onclick="shiftDate(-1)" aria-label="前一天">◀</button>
+      <div class="date-box">
+        <div id="dateDisplay" class="date-display">2026年11月10日</div>
+        <input type="date" id="datePicker" class="hidden-date-input">
+      </div>
+      <button class="nav-btn" onclick="shiftDate(1)" aria-label="後一天">▶</button>
+    </div>
+  </div>
+
+  <!-- 總覽看板 -->
+  <div class="dashboard">
+    <div class="dash-top">
+      <div class="net-label">今日淨袋 (實際落袋)</div>
+      <span id="shiftStatusBadge" class="status-badge status-open">🟢 營業中</span>
+    </div>
+    <div id="netAmount" class="net-amount">$0</div>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="label">總營業額 (收入)</div>
+        <div id="totalInc" class="val val-inc">$0</div>
+      </div>
+      <div class="summary-item">
+        <div class="label">總開支 (車租/氣/雜項)</div>
+        <div id="totalExp" class="val val-exp">$0</div>
+      </div>
+    </div>
+    <div class="settle-bar">
+      <button class="settle-btn" onclick="openSettleModal()">🏁 收工結算 / 埋單</button>
+    </div>
+  </div>
+
+  <!-- 六宮格分類統計 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-title">🙋‍♂️ 街客</div>
+      <div id="statStreet" class="stat-val">$0</div>
+      <div id="countStreet" class="stat-sub" style="color:var(--green)">0 轉</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">📱 Uber</div>
+      <div id="statUber" class="stat-val">$0</div>
+      <div class="stat-sub" style="color:var(--blue)">每日結算</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">💰 其他收入</div>
+      <div id="statOtherInc" class="stat-val">$0</div>
+      <div class="stat-sub">小費/補貼</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">🔑 車租</div>
+      <div id="statRent" class="stat-val" style="color:var(--red)">$0</div>
+      <div class="stat-sub">固定開支</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">⛽ 石油氣</div>
+      <div id="statLpg" class="stat-val" style="color:var(--red)">$0</div>
+      <div class="stat-sub">收工入氣</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">🛠️ 其他支出</div>
+      <div id="statOtherExp" class="stat-val" style="color:var(--red)">$0</div>
+      <div class="stat-sub">洗車/雜項</div>
+    </div>
+  </div>
+
+  <!-- 街客逐轉快入 -->
+  <div class="street-card">
+    <div class="card-header">
+      <div class="card-title">🙋‍♂️ 街客逐轉快入</div>
+      <span class="tag-pill">落客即入・自動計轉數</span>
+    </div>
+    <div class="price-box">
+      <span class="price-symbol">$</span>
+      <input type="number" id="streetAmt" class="input-price" placeholder="輸入錶價 / 實收金額" inputmode="decimal">
+    </div>
+    <input type="text" id="streetNote" class="input-note" placeholder="備註（可選下方標籤或手寫）">
+    <div class="quick-tags">
+      <button type="button" class="q-tag" onclick="appendStreetTag('過海')">＋過海</button>
+      <button type="button" class="q-tag" onclick="appendStreetTag('機場')">＋機場</button>
+      <button type="button" class="q-tag" onclick="appendStreetTag('隧道')">＋隧道</button>
+      <button type="button" class="q-tag" onclick="appendStreetTag('行李')">＋行李</button>
+      <button type="button" class="q-tag" onclick="appendStreetTag('預約')">＋預約</button>
+    </div>
+    <button class="btn-green" onclick="addStreetTrip()">＋ 加入街客行程</button>
+  </div>
+
+  <!-- 每日單次結算項目 -->
+  <div class="card">
+    <div class="card-header" style="margin-bottom:6px;">
+      <div class="card-title">📌 每日單次結算項目</div>
+      <span style="font-size:12px; color:var(--sub); font-weight:600;">每日點選或輸入一次</span>
+    </div>
+
+    <!-- 車租 -->
+    <div class="item-block">
+      <div class="sub-header">
+        <span>🔑 今日車租</span>
+        <span id="rentStatus" class="status-text">未設定</span>
+      </div>
+      <div class="rent-grid">
+        <button id="btnRent1" class="rent-btn" onclick="setSingleItem('車租', 'exp', RENT_PRESET_1)">$490</button>
+        <button id="btnRent2" class="rent-btn" onclick="setSingleItem('車租', 'exp', RENT_PRESET_2)">$410</button>
+        <button id="btnRentCustom" class="rent-btn" onclick="openCustomRentModal()">自訂</button>
+        <button class="rent-btn" style="color:var(--sub); font-weight:700;" onclick="setSingleItem('車租', 'exp', 0)">清除</button>
+      </div>
+    </div>
+
+    <!-- Uber -->
+    <div class="item-block">
+      <div class="sub-header">
+        <span>📱 Uber 今日總收入</span>
+        <span id="uberStatus" class="status-text">未輸入</span>
+      </div>
+      <div class="single-row">
+        <input type="number" id="uberInput" class="single-input" placeholder="收工輸入 Uber 總額 $" inputmode="decimal">
+        <button class="save-btn btn-blue" onclick="saveInputItem('Uber', 'inc', 'uberInput')">儲存</button>
+      </div>
+    </div>
+
+    <!-- 石油氣 -->
+    <div class="item-block">
+      <div class="sub-header">
+        <span>⛽ 石油氣費</span>
+        <span id="lpgStatus" class="status-text">未輸入</span>
+      </div>
+      <div class="single-row">
+        <input type="number" id="lpgInput" class="single-input" placeholder="收工入氣金額 $" inputmode="decimal">
+        <button class="save-btn btn-red" onclick="saveInputItem('石油氣', 'exp', 'lpgInput')">儲存</button>
+      </div>
+    </div>
+
+    <!-- 其他收支 -->
+    <div class="item-block">
+      <div class="sub-header">
+        <span>🛠️ 其他收入 / 雜項支出</span>
+        <span class="status-text">洗車/泊車/小費</span>
+      </div>
+      <div class="other-inputs">
+        <input type="number" id="otherAmt" class="single-input" placeholder="金額 $" inputmode="decimal">
+        <input type="text" id="otherNote" class="single-input" style="font-size:16px;" placeholder="項目 (如: 洗車)">
+      </div>
+      <div class="other-actions">
+        <button class="other-btn other-btn-inc" onclick="addOtherRecord('其他收入', 'inc')">＋ 記為其他收入</button>
+        <button class="other-btn other-btn-exp" onclick="addOtherRecord('其他支出', 'exp')">－ 記為雜項支出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 當日明細 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📋 當更逐筆明細</div>
+      <span id="recordCount" style="font-size:13px; font-weight:700; color:var(--sub);">共 0 筆</span>
+    </div>
+    <ul id="recordList" class="record-list"></ul>
+  </div>
+
+  <!-- 月結與匯出 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📊 本月累計 (<span id="monthLabel"></span>)</div>
+      <button onclick="exportCSV()" style="padding:7px 12px; border-radius:9px; border:1px solid var(--border); background:#f8fafc; font-size:13px; font-weight:700; cursor:pointer; color:var(--text);">📥 匯出 CSV</button>
+    </div>
+    <div class="month-box">
+      <div>
+        <div class="m-label">本月總收</div>
+        <div id="mInc" class="m-val" style="color:var(--green)">$0</div>
+      </div>
+      <div>
+        <div class="m-label">本月總支</div>
+        <div id="mExp" class="m-val" style="color:var(--red)">$0</div>
+      </div>
+      <div>
+        <div class="m-label">本月淨賺</div>
+        <div id="mNet" class="m-val" style="color:var(--blue)">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 資料備份與還原 -->
+  <div class="card">
+    <div class="card-header" style="margin-bottom:10px;">
+      <div class="card-title" style="font-size:15px;">💾 資料備份與還原</div>
+      <span style="font-size:12px; color:var(--sub);">轉手機或防洗機專用</span>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <button onclick="copyBackupJSON()" style="height:42px; border-radius:10px; border:1px solid var(--border); background:#f8fafc; font-size:14px; font-weight:700; cursor:pointer; color:var(--text);">📤 複製備份碼</button>
+      <button onclick="openRestoreModal()" style="height:42px; border-radius:10px; border:1px solid var(--border); background:#f8fafc; font-size:14px; font-weight:700; cursor:pointer; color:var(--blue);">📥 貼上還原</button>
+    </div>
+  </div>
+
+  <!-- 收工結算單彈窗 -->
+  <div id="settleModal" class="modal-overlay" onclick="if(event.target===this)closeSettleModal()">
+    <div class="modal-box">
+      <div class="receipt-title">🏁 當更收工結算單</div>
+      <div id="receiptDate" class="receipt-date"></div>
+      <div class="receipt-body">
+        <div class="r-row"><span>🙋‍♂️ 街客收入 (<span id="rStreetCnt">0</span> 轉)</span><strong id="rStreet">$0</strong></div>
+        <div class="r-row"><span>📱 Uber 收入</span><strong id="rUber">$0</strong></div>
+        <div class="r-row"><span>💰 其他收入</span><strong id="rOtherInc">$0</strong></div>
+        <div class="r-row" style="color:var(--red)"><span>🔑 車租</span><strong id="rRent">-$0</strong></div>
+        <div class="r-row" style="color:var(--red)"><span>⛽ 石油氣</span><strong id="rLpg">-$0</strong></div>
+        <div class="r-row" style="color:var(--red)"><span>🛠️ 其他支出</span><strong id="rOtherExp">-$0</strong></div>
+        <div class="r-row total">
+          <span>實際落袋淨賺</span>
+          <span id="rNet" style="color:var(--green)">$0</span>
+        </div>
+      </div>
+      <div id="missingWarning" style="font-size:13px; font-weight:600; color:#b45309; background:#fef3c7; padding:9px 12px; border-radius:10px; margin-bottom:12px; display:none;"></div>
+      <div class="modal-actions">
+        <button class="m-btn" style="background:var(--green); color:#fff;" onclick="confirmSettle(false)">✅ 確認收工結算（留在今日）</button>
+        <button class="m-btn" style="background:var(--blue); color:#fff;" onclick="confirmSettle(true)">⏭️ 確認結算並切換至下一天</button>
+        <button class="m-btn" style="background:#f1f5f9; color:var(--text);" onclick="copyReceiptText()">📋 複製今日結算文字</button>
+        <button class="m-btn" style="background:transparent; color:var(--sub); height:40px;" onclick="closeSettleModal()">返回修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自訂車租金額彈窗 -->
+  <div id="customRentModal" class="modal-overlay" onclick="if(event.target===this)closeCustomRentModal()">
+    <div class="modal-box">
+      <div class="receipt-title">🔑 設定自訂車租</div>
+      <div class="receipt-date">請輸入今日車租金額 ($)</div>
+      <input type="number" id="customRentInput" class="single-input" placeholder="例如：450" inputmode="decimal" style="margin-bottom:14px; font-size:22px; text-align:center; height:52px;">
+      <div class="modal-actions">
+        <button class="m-btn" style="background:var(--red); color:#fff;" onclick="confirmCustomRent()">儲存車租</button>
+        <button class="m-btn" style="background:transparent; color:var(--sub); height:40px;" onclick="closeCustomRentModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 刪除確認彈窗 -->
+  <div id="deleteModal" class="modal-overlay" onclick="if(event.target===this)closeDeleteModal()">
+    <div class="modal-box">
+      <div class="receipt-title">🗑️ 刪除紀錄確認</div>
+      <div id="deleteModalDesc" class="receipt-date" style="margin-top:6px; font-size:16px;">確定要刪除這筆紀錄嗎？</div>
+      <div class="modal-actions">
+        <button class="m-btn" style="background:var(--red); color:#fff;" onclick="confirmDeleteRecord()">確定刪除</button>
+        <button class="m-btn" style="background:#f1f5f9; color:var(--text);" onclick="closeDeleteModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 還原備份彈窗 -->
+  <div id="restoreModal" class="modal-overlay" onclick="if(event.target===this)closeRestoreModal()">
+    <div class="modal-box">
+      <div class="receipt-title">📥 貼上備份碼還原資料</div>
+      <div class="receipt-date">貼上之前複製的備份碼，會自動合併保留所有紀錄</div>
+      <textarea id="restoreInput" rows="4" placeholder="在此貼上備份碼..." style="width:100%; padding:12px; border-radius:12px; border:1.5px solid var(--border); font-size:15px; margin-bottom:14px; outline:none;"></textarea>
+      <div class="modal-actions">
+        <button class="m-btn" style="background:var(--blue); color:#fff;" onclick="confirmRestoreJSON()">確認還原資料</button>
+        <button class="m-btn" style="background:transparent; color:var(--sub); height:40px;" onclick="closeRestoreModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // ⭐ 預設車租設定（以後想改車租，只需改呢兩行數字！）
+    const RENT_PRESET_1 = 490;
+    const RENT_PRESET_2 = 410;
+    // ==========================================
+
+    const STORAGE_KEY = 'hk_taxi_ledger_v1';
+    const SETTLE_KEY = 'hk_taxi_settled_days_v1';
+    const WEEKDAYS = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+    const datePicker = document.getElementById('datePicker');
+    let pendingDeleteId = null;
+    let toastTimer = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastBox');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2200);
+    }
+
+    // 以早上 06:00 為換日分界線計算「當前營業日」
+    function getWorkingDateStr() {
+      const now = new Date();
+      const shifted = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      const y = shifted.getFullYear();
+      const m = String(shifted.getMonth() + 1).padStart(2, '0');
+      const d = String(shifted.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDisplayDate(dateStr) {
+      const [y, m, d] = dateStr.split('-');
+      const dt = new Date(Number(y), Number(m) - 1, Number(d));
+      const wk = WEEKDAYS[dt.getDay()];
+      return `${y}年${ parseInt(m) }月${ parseInt(d) }日 (${wk})`;
+    }
+
+    function shiftDate(days) {
+      const parts = datePicker.value.split('-');
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      dt.setDate(dt.getDate() + days);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      datePicker.value = `${y}-${m}-${d}`;
+      render();
+    }
+
+    function jumpToCurrentShift() {
+      datePicker.value = getWorkingDateStr();
+      render();
+      showToast('📍 已回到當更營業日');
+    }
+
+    function getRecords() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveRecords(records) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function getSettledDays() {
+      try {
+        const raw = localStorage.getItem(SETTLE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveSettledDay(dateStr, status) {
+      const settled = getSettledDays();
+      if (status) settled[dateStr] = new Date().toTimeString().slice(0, 5);
+      else delete settled[dateStr];
+      localStorage.setItem(SETTLE_KEY, JSON.stringify(settled));
+    }
+
+    function appendStreetTag(tag) {
+      const noteEl = document.getElementById('streetNote');
+      const current = noteEl.value.trim();
+      if (!current) {
+        noteEl.value = tag;
+      } else if (!current.includes(tag)) {
+        noteEl.value = `${current} ${tag}`;
+      }
+    }
+
+    function addStreetTrip() {
+      const amtEl = document.getElementById('streetAmt');
+      const noteEl = document.getElementById('streetNote');
+      const val = parseFloat(amtEl.value);
+      if (isNaN(val) || val <= 0) {
+        showToast('⚠️ 請輸入有效的街客金額');
+        amtEl.focus();
+        return;
+      }
+      const records = getRecords();
+      records.push({
+        id: Date.now(),
+        date: datePicker.value,
+        time: new Date().toTimeString().slice(0, 5),
+        category: '街客',
+        type: 'inc',
+        amount: val,
+        note: noteEl.value.trim()
+      });
+      saveRecords(records);
+      amtEl.value = '';
+      noteEl.value = '';
+      render();
+      showToast(`✅ 已加入街客 +$${val}`);
+    }
+
+    function setSingleItem(category, type, amount) {
+      let records = getRecords().filter(r => !(r.date === datePicker.value && r.category === category));
+      if (amount > 0) {
+        records.push({
+          id: Date.now(),
+          date: datePicker.value,
+          time: new Date().toTimeString().slice(0, 5),
+          category,
+          type,
+          amount,
+          note: '每日單次結算'
+        });
+        showToast(`✅ 已設定${category} $${amount}`);
+      } else {
+        showToast(`🧹 已清除今日${category}`);
+      }
+      saveRecords(records);
+      render();
+    }
+
+    function openCustomRentModal() {
+      const input = document.getElementById('customRentInput');
+      input.value = '';
+      document.getElementById('customRentModal').classList.add('show');
+      setTimeout(() => input.focus(), 100);
+    }
+
+    function closeCustomRentModal() {
+      document.getElementById('customRentModal').classList.remove('show');
+    }
+
+    function confirmCustomRent() {
+      const val = parseFloat(document.getElementById('customRentInput').value);
+      if (isNaN(val) || val < 0) {
+        showToast('⚠️ 請輸入有效的車租金額');
+        return;
+      }
+      setSingleItem('車租', 'exp', val);
+      closeCustomRentModal();
+    }
+
+    function saveInputItem(category, type, inputId) {
+      const el = document.getElementById(inputId);
+      const val = parseFloat(el.value);
+      if (isNaN(val) || val < 0) {
+        showToast(`⚠️ 請輸入有效的 ${category} 金額`);
+        el.focus();
+        return;
+      }
+      setSingleItem(category, type, val);
+      el.value = '';
+    }
+
+    function addOtherRecord(category, type) {
+      const amtEl = document.getElementById('otherAmt');
+      const noteEl = document.getElementById('otherNote');
+      const val = parseFloat(amtEl.value);
+      if (isNaN(val) || val <= 0) {
+        showToast('⚠️ 請輸入有效金額');
+        amtEl.focus();
+        return;
+      }
+      const records = getRecords();
+      records.push({
+        id: Date.now(),
+        date: datePicker.value,
+        time: new Date().toTimeString().slice(0, 5),
+        category,
+        type,
+        amount: val,
+        note: noteEl.value.trim()
+      });
+      saveRecords(records);
+      amtEl.value = '';
+      noteEl.value = '';
+      render();
+      showToast(`✅ 已記錄${category} $${val}`);
+    }
+
+    function deleteRecord(id) {
+      const rec = getRecords().find(r => r.id === id);
+      pendingDeleteId = id;
+      const descEl = document.getElementById('deleteModalDesc');
+      if (rec) {
+        descEl.textContent = `確定要刪除「${rec.note || rec.category} ($${rec.amount})」嗎？`;
+      } else {
+        descEl.textContent = '確定要刪除這筆紀錄嗎？';
+      }
+      document.getElementById('deleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteId = null;
+      document.getElementById('deleteModal').classList.remove('show');
+    }
+
+    function confirmDeleteRecord() {
+      if (pendingDeleteId !== null) {
+        saveRecords(getRecords().filter(r => r.id !== pendingDeleteId));
+        render();
+        showToast('🗑️ 已刪除紀錄');
+      }
+      closeDeleteModal();
+    }
+
+    function openSettleModal() {
+      const d = datePicker.value;
+      const dayRecs = getRecords().filter(r => r.date === d);
+      let sStreet = 0, cStreet = 0, sUber = 0, sOInc = 0, sRent = 0, sLpg = 0, sOExp = 0;
+      dayRecs.forEach(r => {
+        if (r.category === '街客') { sStreet += r.amount; cStreet++; }
+        else if (r.category === 'Uber') sUber += r.amount;
+        else if (r.category === '其他收入') sOInc += r.amount;
+        else if (r.category === '車租') sRent += r.amount;
+        else if (r.category === '石油氣') sLpg += r.amount;
+        else if (r.category === '其他支出') sOExp += r.amount;
+      });
+      const net = (sStreet + sUber + sOInc) - (sRent + sLpg + sOExp);
+
+      document.getElementById('receiptDate').textContent = `營業日：${formatDisplayDate(d)}`;
+      document.getElementById('rStreetCnt').textContent = cStreet;
+      document.getElementById('rStreet').textContent = '$' + sStreet;
+      document.getElementById('rUber').textContent = '$' + sUber;
+      document.getElementById('rOtherInc').textContent = '$' + sOInc;
+      document.getElementById('rRent').textContent = '-$' + sRent;
+      document.getElementById('rLpg').textContent = '-$' + sLpg;
+      document.getElementById('rOtherExp').textContent = '-$' + sOExp;
+
+      const rNetEl = document.getElementById('rNet');
+      rNetEl.textContent = (net >= 0 ? '$' : '-$') + Math.abs(net).toFixed(1).replace(/\.0$/, '');
+      rNetEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+
+      const missing = [];
+      if (sRent === 0) missing.push('車租');
+      if (sLpg === 0) missing.push('石油氣');
+      const warnEl = document.getElementById('missingWarning');
+      if (missing.length > 0) {
+        warnEl.style.display = 'block';
+        warnEl.textContent = `💡 溫馨提示：今日尚未輸入「${missing.join('、')}」，如有開支可先返回補入。`;
+      } else {
+        warnEl.style.display = 'none';
+      }
+
+      document.getElementById('settleModal').classList.add('show');
+    }
+
+    function closeSettleModal() {
+      document.getElementById('settleModal').classList.remove('show');
+    }
+
+    function confirmSettle(moveNextDay) {
+      saveSettledDay(datePicker.value, true);
+      closeSettleModal();
+      if (moveNextDay) {
+        shiftDate(1);
+        showToast('🏁 已完成結算，切換至下一營業日');
+      } else {
+        render();
+        showToast('🏁 已完成今日收工結算');
+      }
+    }
+
+    function copyTextToClipboard(text, successMsg) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg);
+      } catch (err) {
+        showToast('⚠️ 複製失敗，請手動複製');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function copyReceiptText() {
+      const d = formatDisplayDate(datePicker.value);
+      const text = `🚕 的士收工結算 (${d})\n` +
+        `街客：${document.getElementById('rStreet').textContent} (${document.getElementById('rStreetCnt').textContent}轉)\n` +
+        `Uber：${document.getElementById('rUber').textContent}\n` +
+        `其他收入：${document.getElementById('rOtherInc').textContent}\n` +
+        `車租：${document.getElementById('rRent').textContent}\n` +
+        `石油氣：${document.getElementById('rLpg').textContent}\n` +
+        `其他支出：${document.getElementById('rOtherExp').textContent}\n` +
+        `━━━━━━━━━━━━\n` +
+        `💰 實際淨袋：${document.getElementById('rNet').textContent}`;
+      copyTextToClipboard(text, '📋 已複製結算單！可貼上至 WhatsApp');
+    }
+
+    function copyBackupJSON() {
+      const records = getRecords();
+      const settled = getSettledDays();
+      if (!records.length) {
+        showToast('⚠️ 目前沒有任何資料需要備份');
+        return;
+      }
+      const backupObj = { records, settled };
+      copyTextToClipboard(JSON.stringify(backupObj), '📤 已複製全部備份碼！');
+    }
+
+    function openRestoreModal() {
+      document.getElementById('restoreInput').value = '';
+      document.getElementById('restoreModal').classList.add('show');
+    }
+
+    function closeRestoreModal() {
+      document.getElementById('restoreModal').classList.remove('show');
+    }
+
+    function confirmRestoreJSON() {
+      const raw = document.getElementById('restoreInput').value.trim();
+      if (!raw) {
+        showToast('⚠️ 請先貼上備份碼');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        const incomingRecords = Array.isArray(parsed) ? parsed : (parsed.records || []);
+        const incomingSettled = parsed.settled || {};
+        if (!Array.isArray(incomingRecords)) throw new Error('Invalid');
+
+        const existing = getRecords();
+        const map = new Map();
+        existing.forEach(r => map.set(r.id, r));
+        incomingRecords.forEach(r => map.set(r.id, r));
+        const merged = Array.from(map.values()).sort((a, b) => a.id - b.id);
+        saveRecords(merged);
+
+        const mergedSettled = { ...getSettledDays(), ...incomingSettled };
+        localStorage.setItem(SETTLE_KEY, JSON.stringify(mergedSettled));
+
+        closeRestoreModal();
+        render();
+        showToast(`✅ 成功還原並合併 ${merged.length} 筆紀錄！`);
+      } catch (e) {
+        showToast('❌ 備份碼格式不正確，請重新複製');
+      }
+    }
+
+    function setStatusLabel(id, val, prefix) {
+      const el = document.getElementById(id);
+      if (val > 0) {
+        el.textContent = `${prefix} $${val}`;
+        el.className = 'status-text filled';
+      } else {
+        el.textContent = prefix === '已設' ? '未設定' : '未輸入';
+        el.className = 'status-text';
+      }
+    }
+
+    function render() {
+      const selectedDate = datePicker.value;
+      document.getElementById('dateDisplay').textContent = formatDisplayDate(selectedDate);
+
+      const settledMap = getSettledDays();
+      const badge = document.getElementById('shiftStatusBadge');
+      if (settledMap[selectedDate]) {
+        badge.className = 'status-badge status-settled';
+        badge.textContent = `✅ 已收工 (${settledMap[selectedDate]})`;
+      } else {
+        badge.className = 'status-badge status-open';
+        badge.textContent = '🟢 營業中';
+      }
+
+      const allRecords = getRecords();
+      const dayRecords = allRecords.filter(r => r.date === selectedDate);
+
+      let sumStreet = 0, cntStreet = 0, sumUber = 0, sumOtherInc = 0;
+      let sumRent = 0, sumLpg = 0, sumOtherExp = 0;
+
+      dayRecords.forEach(r => {
+        if (r.category === '街客') { sumStreet += r.amount; cntStreet++; }
+        else if (r.category === 'Uber') sumUber += r.amount;
+        else if (r.category === '其他收入') sumOtherInc += r.amount;
+        else if (r.category === '車租') sumRent += r.amount;
+        else if (r.category === '石油氣') sumLpg += r.amount;
+        else if (r.category === '其他支出') sumOtherExp += r.amount;
+      });
+
+      const totalInc = sumStreet + sumUber + sumOtherInc;
+      const totalExp = sumRent + sumLpg + sumOtherExp;
+      const net = totalInc - totalExp;
+
+      const netEl = document.getElementById('netAmount');
+      netEl.textContent = (net >= 0 ? '$' : '-$') + Math.abs(net).toFixed(1).replace(/\.0$/, '');
+      netEl.className = 'net-amount' + (net < 0 ? ' negative' : '');
+
+      document.getElementById('totalInc').textContent = '$' + totalInc.toFixed(1).replace(/\.0$/, '');
+      document.getElementById('totalExp').textContent = '$' + totalExp.toFixed(1).replace(/\.0$/, '');
+
+      document.getElementById('statStreet').textContent = '$' + sumStreet.toFixed(1).replace(/\.0$/, '');
+      document.getElementById('countStreet').textContent = cntStreet + ' 轉';
+      document.getElementById('statUber').textContent = '$' + sumUber.toFixed(1).replace(/\.0$/, '');
+      document.getElementById('statOtherInc').textContent = '$' + sumOtherInc.toFixed(1).replace(/\.0$/, '');
+      document.getElementById('statRent').textContent = '$' + sumRent.toFixed(1).replace(/\.0$/, '');
+      document.getElementById('statLpg').textContent = '$' + sumLpg.toFixed(1).replace(/\.0$/, '');
+      document.getElementById('statOtherExp').textContent = '$' + sumOtherExp.toFixed(1).replace(/\.0$/, '');
+
+      const btn1 = document.getElementById('btnRent1');
+      const btn2 = document.getElementById('btnRent2');
+      btn1.textContent = `$${RENT_PRESET_1}`;
+      btn2.textContent = `$${RENT_PRESET_2}`;
+      btn1.classList.toggle('active', sumRent === RENT_PRESET_1);
+      btn2.classList.toggle('active', sumRent === RENT_PRESET_2);
+
+      const customBtn = document.getElementById('btnRentCustom');
+      const isCustomRent = sumRent > 0 && sumRent !== RENT_PRESET_1 && sumRent !== RENT_PRESET_2;
+      customBtn.classList.toggle('active', isCustomRent);
+      customBtn.textContent = isCustomRent ? `$${sumRent}` : '自訂';
+
+      setStatusLabel('rentStatus', sumRent, '已設');
+      setStatusLabel('uberStatus', sumUber, '已錄');
+      setStatusLabel('lpgStatus', sumLpg, '已錄');
+
+      const listEl = document.getElementById('recordList');
+      document.getElementById('recordCount').textContent = `共 ${dayRecords.length} 筆`;
+      listEl.innerHTML = '';
+      if (dayRecords.length === 0) {
+        listEl.innerHTML = '<li style="color:#94a3b8; text-align:center; padding:16px 0; font-size:15px; font-weight:600;">此營業日暫無紀錄</li>';
+      } else {
+        [...dayRecords].reverse().forEach(r => {
+          const isInc = r.type === 'inc';
+          const badgeClass = r.category === 'Uber' ? 'b-uber' : (isInc ? 'b-inc' : 'b-exp');
+          const li = document.createElement('li');
+          li.className = 'record-item';
+          li.innerHTML = `
+            <div class="rec-left">
+              <span class="badge ${badgeClass}">${r.category}</span>
+              <span class="rec-note">${r.note || r.category}</span>
+              <span class="rec-time">${r.time}</span>
+            </div>
+            <div class="rec-right">
+              <span class="rec-amt" style="color:${isInc ? 'var(--green)' : 'var(--red)'}">${isInc ? '+' : '-'}$${r.amount}</span>
+              <button class="del-btn" onclick="deleteRecord(${r.id})" aria-label="刪除">✕</button>
+            </div>
+          `;
+          listEl.appendChild(li);
+        });
+      }
+
+      const currentMonth = selectedDate.slice(0, 7);
+      document.getElementById('monthLabel').textContent = currentMonth;
+      let mInc = 0, mExp = 0;
+      allRecords.filter(r => r.date.startsWith(currentMonth)).forEach(r => {
+        if (r.type === 'inc') mInc += r.amount;
+        else mExp += r.amount;
+      });
+      document.getElementById('mInc').textContent = '$' + mInc.toFixed(0);
+      document.getElementById('mExp').textContent = '$' + mExp.toFixed(0);
+      document.getElementById('mNet').textContent = '$' + (mInc - mExp).toFixed(0);
+    }
+
+    function exportCSV() {
+      const records = getRecords();
+      if (!records.length) {
+        showToast('⚠️ 暫無紀錄可匯出');
+        return;
+      }
+      let csv = '\uFEFF營業日期,入帳時間,類型,項目,金額,備註\n';
+      records.forEach(r => {
+        csv += `${r.date},${r.time},${r.type === 'inc' ? '收入' : '支出'},${r.category},${r.type === 'inc' ? r.amount : -r.amount},"${(r.note || '').replace(/"/g, '""')}"\n`;
+      });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+      a.download = `的士收支_${datePicker.value}.csv`;
+      a.click();
+      showToast('📥 CSV 檔案已準備下載');
+    }
+
+    document.getElementById('streetAmt').addEventListener('keydown', e => { if (e.key === 'Enter') addStreetTrip(); });
+    document.getElementById('streetNote').addEventListener('keydown', e => { if (e.key === 'Enter') addStreetTrip(); });
+    document.getElementById('uberInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveInputItem('Uber', 'inc', 'uberInput'); });
+    document.getElementById('lpgInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveInputItem('石油氣', 'exp', 'lpgInput'); });
+    document.getElementById('customRentInput').addEventListener('keydown', e => { if (e.key === 'Enter') confirmCustomRent(); });
+
+    datePicker.value = getWorkingDateStr();
+    datePicker.addEventListener('change', render);
+    render();
+  </script>
+</body>
+</html>
